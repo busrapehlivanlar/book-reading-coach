@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply font-sans bg-cream text-navy;
+  }
+}
+
+@layer utilities {
+  .bg-cream { background-color: #fdf7ee; }
+  .text-cream { color: #fdf7ee; }
+  .text-navy { color: #1a1f3c; }
+  .bg-navy { background-color: #1a1f3c; }
+}
