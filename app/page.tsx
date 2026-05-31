@@ -21,8 +21,15 @@ interface Profile {
   name: string;
   desc: string;
 }
-
-type BookEntry = [title: string, author: string, reason: string];
+interface BookEntry {
+  title: string;
+  author: string;
+  reason: string;
+  length: "short" | "medium" | "long";
+  pace: "fast" | "balanced" | "slow";
+  difficulty: "easy" | "medium" | "hard";
+  moods: string[];
+}
 
 // ── DATA ──
 const QUESTIONS: Question[] = [
@@ -60,28 +67,116 @@ const PROFILES: Profile[] = [
   { emoji: "🔭", name: "Derinleşmek İsteyen Okur", desc: "Okuyorsun zaten. Şimdi sıra daha anlamlı kitaplarda." },
 ];
 
-const BOOKS_BY_EXP: Record<string, BookEntry[]> = {
-  "Sürükleyici & aksiyon": [
-    ["Dürüst Aldatıcı", "Dani Shapiro", "Kısa, hızlı tempolu, bırakamıyorsun."],
-    ["Karga Kral", "Leigh Bardugo", "Sürükleyici, takım dinamikleri."],
-    ["Hayvan Çiftliği", "George Orwell", "Kısa ve güçlü, modern klasik."],
-  ],
-  "Öğretici & bilgi verici": [
-    ["Atomik Alışkanlıklar", "James Clear", "Alışkanlık bilimi, pratik."],
-    ["Sapiens", "Yuval Noah Harari", "İnsanlık tarihi, kolay dil."],
-    ["Düşün ve Zengin Ol", "Napoleon Hill", "Motivasyon klasiği."],
-  ],
-  "Duygusal & içsel": [
-    ["Küçük Prens", "Antoine de Saint-Exupéry", "Kısa, derin, her yaşa."],
-    ["Sofie'nin Dünyası", "Jostein Gaarder", "Felsefeye giriş, roman formatında."],
-    ["Kite Runner", "Khaled Hosseini", "Güçlü karakter, duygusal yolculuk."],
-  ],
-  "Kısa & kolay": [
-    ["Hayvan Çiftliği", "George Orwell", "90 sayfa, keskin mesaj."],
-    ["Martı Jonathan Livingston", "Richard Bach", "60 sayfa, ilham verici."],
-    ["Küçük Prens", "Antoine de Saint-Exupéry", "96 sayfa, evrensel."],
-  ],
-};
+const BOOKS: BookEntry[] = [
+  {
+    title: "Hayvan Çiftliği",
+    author: "George Orwell",
+    reason: "Kısa, akıcı ve güçlü mesajı olan bir başlangıç kitabı.",
+    length: "short",
+    pace: "fast",
+    difficulty: "easy",
+    moods: ["Sürükleyici & aksiyon", "Kısa & kolay", "Öğretici & bilgi verici"],
+  },
+  {
+    title: "Küçük Prens",
+    author: "Antoine de Saint-Exupéry",
+    reason: "Kısa, sade ama duygusal ve düşündürücü bir okuma deneyimi sunar.",
+    length: "short",
+    pace: "balanced",
+    difficulty: "easy",
+    moods: ["Duygusal & içsel", "Kısa & kolay"],
+  },
+  {
+    title: "Martı Jonathan Livingston",
+    author: "Richard Bach",
+    reason: "Kısa yapısı ve ilham verici anlatımıyla okuma alışkanlığına dönüş için uygundur.",
+    length: "short",
+    pace: "balanced",
+    difficulty: "easy",
+    moods: ["Kısa & kolay", "Duygusal & içsel"],
+  },
+  {
+    title: "Şeker Portakalı",
+    author: "José Mauro de Vasconcelos",
+    reason: "Duygusal, akıcı ve karakterle bağ kurmayı kolaylaştıran bir romandır.",
+    length: "medium",
+    pace: "balanced",
+    difficulty: "easy",
+    moods: ["Duygusal & içsel"],
+  },
+  {
+    title: "Fareler ve İnsanlar",
+    author: "John Steinbeck",
+    reason: "Kısa sayılabilecek, sade dilli ve etkileyici bir klasik.",
+    length: "short",
+    pace: "balanced",
+    difficulty: "easy",
+    moods: ["Duygusal & içsel", "Kısa & kolay"],
+  },
+  {
+    title: "Simyacı",
+    author: "Paulo Coelho",
+    reason: "Akıcı dili ve motive edici hikâyesiyle yeni okurlar için düşük bariyerlidir.",
+    length: "short",
+    pace: "balanced",
+    difficulty: "easy",
+    moods: ["Duygusal & içsel", "Kısa & kolay"],
+  },
+  {
+    title: "Atomik Alışkanlıklar",
+    author: "James Clear",
+    reason: "Okuma alışkanlığı kurmak isteyenler için pratik ve uygulanabilir öneriler içerir.",
+    length: "medium",
+    pace: "balanced",
+    difficulty: "easy",
+    moods: ["Öğretici & bilgi verici"],
+  },
+  {
+    title: "İnsan Ne ile Yaşar?",
+    author: "Lev Tolstoy",
+    reason: "Kısa, sade ve anlamlı hikâyelerle okuma eşiğini düşürür.",
+    length: "short",
+    pace: "balanced",
+    difficulty: "easy",
+    moods: ["Kısa & kolay", "Duygusal & içsel"],
+  },
+  {
+    title: "Bilinmeyen Bir Kadının Mektubu",
+    author: "Stefan Zweig",
+    reason: "Kısa, yoğun ve duygusal bir anlatı arayanlar için güçlü bir seçenek.",
+    length: "short",
+    pace: "fast",
+    difficulty: "medium",
+    moods: ["Duygusal & içsel", "Kısa & kolay"],
+  },
+  {
+    title: "Satranç",
+    author: "Stefan Zweig",
+    reason: "Kısa ama zihinsel gerilimi yüksek, tempolu bir okuma sunar.",
+    length: "short",
+    pace: "fast",
+    difficulty: "medium",
+    moods: ["Sürükleyici & aksiyon", "Kısa & kolay"],
+  },
+  {
+    title: "1984",
+    author: "George Orwell",
+    reason: "Daha derin ve düşündürücü bir distopya okumak isteyenler için güçlü bir seçim.",
+    length: "medium",
+    pace: "balanced",
+    difficulty: "medium",
+    moods: ["Sürükleyici & aksiyon", "Öğretici & bilgi verici"],
+  },
+  {
+    title: "Dönüşüm",
+    author: "Franz Kafka",
+    reason: "Kısa ama daha sembolik ve düşündürücü bir metin denemek isteyenler için uygundur.",
+    length: "short",
+    pace: "slow",
+    difficulty: "medium",
+    moods: ["Duygusal & içsel", "Öğretici & bilgi verici"],
+  },
+];
 
 const PLANS: Record<string, string[]> = {
   "5 dakika": ["5 dk", "6 dk", "7 dk", "8 dk", "8 dk", "10 dk", "10 dk"],
@@ -101,6 +196,75 @@ function getProfile(answers: string[]): Profile {
   if (bore === "Yavaş tempo" || bore === "Çok uzun olması") return PROFILES[1];
   if (time === "5 dakika" || time === "10 dakika") return PROFILES[2];
   return PROFILES[3];
+}
+function getBookRecommendations(answers: string[]): BookEntry[] {
+  const time = answers[0];
+  const bore = answers[1];
+  const mood = answers[2];
+  const level = answers[3];
+
+  const scoredBooks = BOOKS.map((book) => {
+    let score = 0;
+
+    if (book.moods.includes(mood)) score += 4;
+
+    if (time === "5 dakika" || time === "10 dakika") {
+      if (book.length === "short") score += 3;
+      if (book.difficulty === "easy") score += 2;
+    }
+
+    if (time === "15 dakika") {
+      if (book.length === "short" || book.length === "medium") score += 2;
+    }
+
+    if (time === "30 dakika+") {
+      if (book.length === "medium" || book.length === "long") score += 2;
+    }
+
+    if (bore === "Ağır dil") {
+      if (book.difficulty === "easy") score += 3;
+      if (book.difficulty === "hard") score -= 3;
+    }
+
+    if (bore === "Yavaş tempo") {
+      if (book.pace === "fast") score += 3;
+      if (book.pace === "slow") score -= 2;
+    }
+
+    if (bore === "Çok uzun olması") {
+      if (book.length === "short") score += 4;
+      if (book.length === "long") score -= 3;
+    }
+
+    if (bore === "Konunun ilgimi çekmemesi") {
+      if (book.moods.includes(mood)) score += 2;
+    }
+
+    if (level === "Yeni başlıyorum") {
+      if (book.difficulty === "easy") score += 3;
+      if (book.length === "short") score += 2;
+      if (book.difficulty === "hard") score -= 4;
+    }
+
+    if (level === "Ara sıra okuyorum") {
+      if (book.difficulty === "easy" || book.difficulty === "medium") score += 2;
+    }
+
+    if (level === "Düzenli okumak istiyorum") {
+      if (book.length === "medium" || book.pace === "balanced") score += 2;
+    }
+
+    if (level === "Zaten okuyorum ama daha iyi olabilir") {
+      if (book.difficulty === "medium") score += 2;
+    }
+
+    return { book, score };
+  });
+
+  return scoredBooks
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map((item) => item.book);
 }
 function getTodayKey() {
   const today = new Date();
@@ -409,8 +573,8 @@ function Quiz() {
             key={opt}
             onClick={() => select(opt)}
             className={`text-left px-4 py-3 rounded-xl border-2 text-sm transition-all ${answers[step] === opt
-                ? "border-amber-400 bg-amber-50 text-amber-700 font-medium"
-                : "border-gray-200 bg-gray-50 text-navy hover:border-amber-300 hover:bg-amber-50"
+              ? "border-amber-400 bg-amber-50 text-amber-700 font-medium"
+              : "border-gray-200 bg-gray-50 text-navy hover:border-amber-300 hover:bg-amber-50"
               }`}
           >
             {opt}
@@ -441,7 +605,7 @@ function Quiz() {
 
 function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => void }) {
   const profile = getProfile(answers);
-  const books = BOOKS_BY_EXP[answers[2]] ?? BOOKS_BY_EXP["Kısa & kolay"];
+  const books = getBookRecommendations(answers);
   const plan = PLANS[answers[0]] ?? PLANS["10 dakika"];
   const today = new Date();
   const [completedToday, setCompletedToday] = useState(false);
@@ -511,17 +675,17 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
       {/* Books */}
       <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-3">Sana özel kitaplar</p>
       <div className="flex flex-col gap-2 mb-6">
-        {books.map(([title, author, reason]) => (
-          <div key={title} className="flex gap-3 items-center bg-cream rounded-xl p-3 border border-amber-100">
+        {books.map((book) => (
+          <div key={book.title} className="flex gap-3 items-center bg-cream rounded-xl p-3 border border-amber-100">
             <div
               className="w-9 h-12 rounded flex items-center justify-center text-cream text-[9px] font-bold text-center p-0.5 flex-shrink-0"
               style={{ background: color }}
             >
-              {title.slice(0, 4)}
+              {book.title.slice(0, 4)}
             </div>
             <div>
-              <p className="font-semibold text-navy text-sm">{title}</p>
-              <p className="text-gray-400 text-xs">{author} — {reason}</p>
+              <p className="font-semibold text-navy text-sm">{book.title}</p>
+              <p className="text-gray-400 text-xs">{book.author} — {book.reason}</p>
             </div>
           </div>
         ))}
