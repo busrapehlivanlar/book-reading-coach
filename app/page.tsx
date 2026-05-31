@@ -22,13 +22,16 @@ interface Profile {
   desc: string;
 }
 interface BookEntry {
+  id: string;
   title: string;
   author: string;
+  totalPages: number;
   reason: string;
   length: "short" | "medium" | "long";
   pace: "fast" | "balanced" | "slow";
   difficulty: "easy" | "medium" | "hard";
   moods: string[];
+  coverColor: string;
 }
 
 // ── DATA ──
@@ -69,112 +72,148 @@ const PROFILES: Profile[] = [
 
 const BOOKS: BookEntry[] = [
   {
+    id: "hayvan-ciftligi",
     title: "Hayvan Çiftliği",
     author: "George Orwell",
+    totalPages: 152,
     reason: "Kısa, akıcı ve güçlü mesajı olan bir başlangıç kitabı.",
     length: "short",
     pace: "fast",
     difficulty: "easy",
     moods: ["Sürükleyici & aksiyon", "Kısa & kolay", "Öğretici & bilgi verici"],
+    coverColor: "#d97706",
   },
   {
+    id: "kucuk-prens",
     title: "Küçük Prens",
     author: "Antoine de Saint-Exupéry",
+    totalPages: 96,
     reason: "Kısa, sade ama duygusal ve düşündürücü bir okuma deneyimi sunar.",
     length: "short",
     pace: "balanced",
     difficulty: "easy",
     moods: ["Duygusal & içsel", "Kısa & kolay"],
+    coverColor: "#fbbf24",
   },
   {
+    id: "marti-jonathan-livingston",
     title: "Martı Jonathan Livingston",
     author: "Richard Bach",
+    totalPages: 128,
     reason: "Kısa yapısı ve ilham verici anlatımıyla okuma alışkanlığına dönüş için uygundur.",
     length: "short",
     pace: "balanced",
     difficulty: "easy",
     moods: ["Kısa & kolay", "Duygusal & içsel"],
+    coverColor: "#f59e0b",
   },
   {
+    id: "seker-portakali",
     title: "Şeker Portakalı",
     author: "José Mauro de Vasconcelos",
+    totalPages: 144,
     reason: "Duygusal, akıcı ve karakterle bağ kurmayı kolaylaştıran bir romandır.",
     length: "medium",
     pace: "balanced",
     difficulty: "easy",
     moods: ["Duygusal & içsel"],
+    coverColor: "#f59e0b",
   },
   {
+    id: "fareler-ve-insanlar",
     title: "Fareler ve İnsanlar",
     author: "John Steinbeck",
+    totalPages: 160,
     reason: "Kısa sayılabilecek, sade dilli ve etkileyici bir klasik.",
     length: "short",
     pace: "balanced",
     difficulty: "easy",
     moods: ["Duygusal & içsel", "Kısa & kolay"],
+    coverColor: "#f59e0b",
   },
   {
+    id: "simyaci",
     title: "Simyacı",
     author: "Paulo Coelho",
+    totalPages: 192,
     reason: "Akıcı dili ve motive edici hikâyesiyle yeni okurlar için düşük bariyerlidir.",
     length: "short",
     pace: "balanced",
     difficulty: "easy",
     moods: ["Duygusal & içsel", "Kısa & kolay"],
+    coverColor: "#f59e0b",
   },
   {
+    id: "atomik-aliskanliklar",
     title: "Atomik Alışkanlıklar",
     author: "James Clear",
+    totalPages: 320,
     reason: "Okuma alışkanlığı kurmak isteyenler için pratik ve uygulanabilir öneriler içerir.",
     length: "medium",
     pace: "balanced",
     difficulty: "easy",
     moods: ["Öğretici & bilgi verici"],
+    coverColor: "#0f766e",
   },
   {
+    id: "insan-ne-ile-yasar",
     title: "İnsan Ne ile Yaşar?",
     author: "Lev Tolstoy",
+    totalPages: 256,
     reason: "Kısa, sade ve anlamlı hikâyelerle okuma eşiğini düşürür.",
     length: "short",
     pace: "balanced",
     difficulty: "easy",
     moods: ["Kısa & kolay", "Duygusal & içsel"],
+    coverColor: "#1f2937",
   },
   {
+    id: "bilinmeyen-bir-kadinin-mektubu",
     title: "Bilinmeyen Bir Kadının Mektubu",
     author: "Stefan Zweig",
+    totalPages: 128,
     reason: "Kısa, yoğun ve duygusal bir anlatı arayanlar için güçlü bir seçenek.",
     length: "short",
     pace: "fast",
     difficulty: "medium",
     moods: ["Duygusal & içsel", "Kısa & kolay"],
+    coverColor: "#7c2d12",
   },
   {
+    id: "satranc",
     title: "Satranç",
     author: "Stefan Zweig",
+    totalPages: 128,
     reason: "Kısa ama zihinsel gerilimi yüksek, tempolu bir okuma sunar.",
     length: "short",
     pace: "fast",
     difficulty: "medium",
     moods: ["Sürükleyici & aksiyon", "Kısa & kolay"],
+    coverColor: "#365314",
   },
   {
+    id: "1984",
     title: "1984",
     author: "George Orwell",
+    totalPages: 320,
     reason: "Daha derin ve düşündürücü bir distopya okumak isteyenler için güçlü bir seçim.",
     length: "medium",
     pace: "balanced",
     difficulty: "medium",
     moods: ["Sürükleyici & aksiyon", "Öğretici & bilgi verici"],
+    coverColor: "#991b1b",
   },
   {
+    id: "donusum",
     title: "Dönüşüm",
     author: "Franz Kafka",
+    totalPages: 128,
     reason: "Kısa ama daha sembolik ve düşündürücü bir metin denemek isteyenler için uygundur.",
     length: "short",
     pace: "slow",
     difficulty: "medium",
     moods: ["Duygusal & içsel", "Öğretici & bilgi verici"],
+    coverColor: "#f59e0b",
   },
 ];
 
@@ -610,6 +649,7 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
   const today = new Date();
   const [completedToday, setCompletedToday] = useState(false);
   const [streak, setStreak] = useState(0);
+  const [selectedBook, setSelectedBook] = useState<BookEntry | null>(null);
 
   useEffect(() => {
     const todayKey = getTodayKey();
@@ -660,55 +700,161 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
       </div>
 
       {/* Today target */}
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-3">Bugünkü hedef</p>
-      <div className="flex gap-3 mb-6">
-        <div className="flex-1 bg-amber-50 border border-amber-200/50 rounded-xl p-4 text-center">
-          <p className="font-serif font-bold text-amber-600 text-2xl">{plan[0]}</p>
-          <p className="text-amber-600/70 text-xs mt-1">okuma süresi</p>
-        </div>
-        <div className="flex-1 bg-green-50 border border-green-200/50 rounded-xl p-4 text-center">
-          <p className="font-serif font-bold text-green-700 text-2xl">Gün 1</p>
-          <p className="text-green-600/70 text-xs mt-1">başlıyoruz</p>
-        </div>
-      </div>
+  
 
       {/* Books */}
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-3">Sana özel kitaplar</p>
-      <div className="flex flex-col gap-2 mb-6">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-3">
+        İlgini çekebilecek kitaplar
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         {books.map((book) => (
-          <div key={book.title} className="flex gap-3 items-center bg-cream rounded-xl p-3 border border-amber-100">
+          <div
+            key={book.id}
+            className="bg-cream rounded-2xl border border-amber-100 p-3 flex flex-col"
+          >
             <div
-              className="w-9 h-12 rounded flex items-center justify-center text-cream text-[9px] font-bold text-center p-0.5 flex-shrink-0"
-              style={{ background: color }}
+              className="h-36 rounded-xl p-3 mb-3 flex flex-col justify-between text-white shadow-sm"
+              style={{ background: book.coverColor }}
             >
-              {book.title.slice(0, 4)}
+              <div className="text-[10px] uppercase tracking-widest opacity-70">
+                Okuya
+              </div>
+
+              <div>
+                <p className="font-serif font-bold text-lg leading-tight">
+                  {book.title}
+                </p>
+                <p className="text-xs opacity-75 mt-1">{book.author}</p>
+              </div>
+
+              <div className="text-[10px] opacity-70">
+                {book.totalPages} sayfa
+              </div>
             </div>
-            <div>
-              <p className="font-semibold text-navy text-sm">{book.title}</p>
-              <p className="text-gray-400 text-xs">{book.author} — {book.reason}</p>
-            </div>
+
+            <p className="font-semibold text-navy text-sm mb-1">{book.title}</p>
+            <p className="text-gray-400 text-xs mb-3 line-clamp-3">
+              {book.reason}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setSelectedBook(book)}
+              className="mt-auto bg-navy text-cream rounded-full px-4 py-2 text-xs font-medium hover:bg-navy/90 transition-all"
+            >
+              Okumaya başla
+            </button>
           </div>
         ))}
       </div>
+      {selectedBook ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-amber-600 mb-2">
+            Seçilen kitap
+          </p>
 
-      {/* 7-day plan */}
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-3">7 günlük başlangıç planı</p>
-      <div className="grid grid-cols-7 gap-1 mb-6">
-        {plan.map((d, i) => {
-          const day = DAYS[(today.getDay() + i) % 7];
-          const isFirst = i === 0;
-          return (
+          <div className="flex gap-4 items-center">
             <div
-              key={i}
-              className={`rounded-lg p-1.5 text-center ${isFirst ? "bg-amber-400" : "bg-gray-100 border border-gray-200"}`}
+              className="w-16 h-24 rounded-xl p-2 flex flex-col justify-between text-white flex-shrink-0"
+              style={{ background: selectedBook.coverColor }}
             >
-              <p className={`text-[10px] font-bold ${isFirst ? "text-white" : "text-navy"}`}>{day}</p>
-              <p className={`text-[9px] mt-0.5 ${isFirst ? "text-white" : "text-gray-400"}`}>{d}</p>
+              <span className="text-[8px] uppercase tracking-widest opacity-70">
+                Okuya
+              </span>
+              <span className="font-serif font-bold text-xs leading-tight">
+                {selectedBook.title}
+              </span>
+              <span className="text-[8px] opacity-70">
+                {selectedBook.totalPages} syf
+              </span>
             </div>
-          );
-        })}
 
-      </div>
+            <div>
+              <h4 className="font-serif font-bold text-navy text-lg">
+                {selectedBook.title}
+              </h4>
+              <p className="text-gray-500 text-xs mb-2">{selectedBook.author}</p>
+              <p className="text-gray-500 text-sm">{selectedBook.reason}</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-6 text-center">
+          <p className="font-serif font-bold text-navy text-lg mb-1">
+            Okuma planını başlatmak için bir kitap seç.
+          </p>
+          <p className="text-gray-400 text-sm">
+            Yukarıdaki kitaplardan birini seçtiğinde günlük planın ve okuma takibin hazırlanacak.
+          </p>
+        </div>
+      )}
+
+      {selectedBook && (
+        <>
+          {/* 7-day plan */}
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-3">
+            7 günlük başlangıç planı
+          </p>
+
+          <div className="grid grid-cols-7 gap-1 mb-6">
+            {plan.map((d, i) => {
+              const day = DAYS[(today.getDay() + i) % 7];
+              const isFirst = i === 0;
+
+              return (
+                <div
+                  key={i}
+                  className={`rounded-lg p-1.5 text-center ${isFirst ? "bg-amber-400" : "bg-gray-100 border border-gray-200"
+                    }`}
+                >
+                  <p className={`text-[10px] font-bold ${isFirst ? "text-white" : "text-navy"}`}>
+                    {day}
+                  </p>
+                  <p className={`text-[9px] mt-0.5 ${isFirst ? "text-white" : "text-gray-400"}`}>
+                    {d}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Reading tracker */}
+          <div className="bg-navy rounded-2xl p-5 mb-5 text-center">
+            <p className="text-white/50 text-xs mb-1">Bugünkü okuma durumu</p>
+
+            {completedToday ? (
+              <>
+                <p className="font-serif text-2xl font-bold text-white mb-2">
+                  Harika, bugün hedef tamamlandı ✨
+                </p>
+                <p className="text-white/60 text-sm mb-4">
+                  Okuma serin şu anda{" "}
+                  <span className="text-amber-400 font-semibold">{streak} gün</span>.
+                </p>
+                <div className="inline-flex items-center gap-2 bg-green-400/15 text-green-300 rounded-full px-4 py-2 text-sm font-medium">
+                  ✓ Bugün okudum
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="font-serif text-2xl font-bold text-white mb-2">
+                  Bugün sadece {plan[0]} yeter.
+                </p>
+                <p className="text-white/60 text-sm mb-4">
+                  Hedefini tamamladığında işaretle. Küçük adımlar alışkanlığa dönüşür.
+                </p>
+                <button
+                  onClick={markTodayAsRead}
+                  className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-6 py-3 text-sm font-medium transition-all hover:-translate-y-0.5"
+                >
+                  Bugün okudum
+                </button>
+              </>
+            )}
+          </div>
+        </>
+      )}
       {/* Reading tracker */}
       <div className="bg-navy rounded-2xl p-5 mb-5 text-center">
         <p className="text-white/50 text-xs mb-1">Bugünkü okuma durumu</p>
