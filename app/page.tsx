@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // ── BRAND CONFIG (kolay değiştirilebilir) ──
 const BRAND = {
@@ -54,40 +54,40 @@ const QUESTIONS: Question[] = [
 ];
 
 const PROFILES: Profile[] = [
-  { emoji: "🌱", name: "Başlayamayan Okur",       desc: "En zor kısım ilk adım. Küçük başlayıp büyüyeceksin." },
-  { emoji: "🔖", name: "Yarıda Bırakan Okur",     desc: "Yanlış kitap değilsin sen — yanlış tempo vardı. Bunu çözeceğiz." },
-  { emoji: "📵", name: "Dikkati Dağılan Okur",    desc: "Kısa bölümler, somut hedefler. Beyin buna alışacak." },
+  { emoji: "🌱", name: "Başlayamayan Okur", desc: "En zor kısım ilk adım. Küçük başlayıp büyüyeceksin." },
+  { emoji: "🔖", name: "Yarıda Bırakan Okur", desc: "Yanlış kitap değilsin sen — yanlış tempo vardı. Bunu çözeceğiz." },
+  { emoji: "📵", name: "Dikkati Dağılan Okur", desc: "Kısa bölümler, somut hedefler. Beyin buna alışacak." },
   { emoji: "🔭", name: "Derinleşmek İsteyen Okur", desc: "Okuyorsun zaten. Şimdi sıra daha anlamlı kitaplarda." },
 ];
 
 const BOOKS_BY_EXP: Record<string, BookEntry[]> = {
   "Sürükleyici & aksiyon": [
-    ["Dürüst Aldatıcı",  "Dani Shapiro",      "Kısa, hızlı tempolu, bırakamıyorsun."],
-    ["Karga Kral",       "Leigh Bardugo",     "Sürükleyici, takım dinamikleri."],
-    ["Hayvan Çiftliği",  "George Orwell",     "Kısa ve güçlü, modern klasik."],
+    ["Dürüst Aldatıcı", "Dani Shapiro", "Kısa, hızlı tempolu, bırakamıyorsun."],
+    ["Karga Kral", "Leigh Bardugo", "Sürükleyici, takım dinamikleri."],
+    ["Hayvan Çiftliği", "George Orwell", "Kısa ve güçlü, modern klasik."],
   ],
   "Öğretici & bilgi verici": [
-    ["Atomik Alışkanlıklar", "James Clear",         "Alışkanlık bilimi, pratik."],
-    ["Sapiens",              "Yuval Noah Harari",   "İnsanlık tarihi, kolay dil."],
-    ["Düşün ve Zengin Ol",  "Napoleon Hill",        "Motivasyon klasiği."],
+    ["Atomik Alışkanlıklar", "James Clear", "Alışkanlık bilimi, pratik."],
+    ["Sapiens", "Yuval Noah Harari", "İnsanlık tarihi, kolay dil."],
+    ["Düşün ve Zengin Ol", "Napoleon Hill", "Motivasyon klasiği."],
   ],
   "Duygusal & içsel": [
-    ["Küçük Prens",          "Antoine de Saint-Exupéry", "Kısa, derin, her yaşa."],
-    ["Sofie'nin Dünyası",    "Jostein Gaarder",           "Felsefeye giriş, roman formatında."],
-    ["Kite Runner",          "Khaled Hosseini",           "Güçlü karakter, duygusal yolculuk."],
+    ["Küçük Prens", "Antoine de Saint-Exupéry", "Kısa, derin, her yaşa."],
+    ["Sofie'nin Dünyası", "Jostein Gaarder", "Felsefeye giriş, roman formatında."],
+    ["Kite Runner", "Khaled Hosseini", "Güçlü karakter, duygusal yolculuk."],
   ],
   "Kısa & kolay": [
-    ["Hayvan Çiftliği",          "George Orwell",              "90 sayfa, keskin mesaj."],
-    ["Martı Jonathan Livingston", "Richard Bach",               "60 sayfa, ilham verici."],
-    ["Küçük Prens",              "Antoine de Saint-Exupéry",   "96 sayfa, evrensel."],
+    ["Hayvan Çiftliği", "George Orwell", "90 sayfa, keskin mesaj."],
+    ["Martı Jonathan Livingston", "Richard Bach", "60 sayfa, ilham verici."],
+    ["Küçük Prens", "Antoine de Saint-Exupéry", "96 sayfa, evrensel."],
   ],
 };
 
 const PLANS: Record<string, string[]> = {
-  "5 dakika":   ["5 dk","6 dk","7 dk","8 dk","8 dk","10 dk","10 dk"],
-  "10 dakika":  ["10 dk","12 dk","12 dk","15 dk","15 dk","15 dk","20 dk"],
-  "15 dakika":  ["15 dk","15 dk","20 dk","20 dk","25 dk","25 dk","30 dk"],
-  "30 dakika+": ["30 dk","30 dk","35 dk","35 dk","40 dk","40 dk","45 dk"],
+  "5 dakika": ["5 dk", "6 dk", "7 dk", "8 dk", "8 dk", "10 dk", "10 dk"],
+  "10 dakika": ["10 dk", "12 dk", "12 dk", "15 dk", "15 dk", "15 dk", "20 dk"],
+  "15 dakika": ["15 dk", "15 dk", "20 dk", "20 dk", "25 dk", "25 dk", "30 dk"],
+  "30 dakika+": ["30 dk", "30 dk", "35 dk", "35 dk", "40 dk", "40 dk", "45 dk"],
 };
 
 const DAYS = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
@@ -95,12 +95,22 @@ const DAYS = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
 // ── HELPERS ──
 function getProfile(answers: string[]): Profile {
   const level = answers[3];
-  const bore  = answers[1];
-  const time  = answers[0];
+  const bore = answers[1];
+  const time = answers[0];
   if (level === "Yeni başlıyorum") return PROFILES[0];
   if (bore === "Yavaş tempo" || bore === "Çok uzun olması") return PROFILES[1];
   if (time === "5 dakika" || time === "10 dakika") return PROFILES[2];
   return PROFILES[3];
+}
+function getTodayKey() {
+  const today = new Date();
+  return today.toISOString().split("T")[0];
+}
+
+function getYesterdayKey() {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  return yesterday.toISOString().split("T")[0];
 }
 
 // ── SUB-COMPONENTS ──
@@ -112,9 +122,9 @@ function Nav() {
         Oku<span className="text-amber-500">ya</span>
       </span>
       <div className="hidden sm:flex items-center gap-6">
-        <a href="#how"      className="text-sm text-gray-500 hover:text-navy transition-colors">Nasıl çalışır?</a>
+        <a href="#how" className="text-sm text-gray-500 hover:text-navy transition-colors">Nasıl çalışır?</a>
         <a href="#profiles" className="text-sm text-gray-500 hover:text-navy transition-colors">Okur profilleri</a>
-        <a href="#quiz"     className="text-sm text-gray-500 hover:text-navy transition-colors">Demoyu dene</a>
+        <a href="#quiz" className="text-sm text-gray-500 hover:text-navy transition-colors">Demoyu dene</a>
         <a href="#quiz" className="bg-navy text-cream rounded-full px-5 py-2 text-sm font-medium hover:bg-navy/90 transition-all hover:-translate-y-0.5">
           Başla
         </a>
@@ -192,7 +202,7 @@ function Hero() {
             </a>
           </div>
           <div className="flex gap-6 flex-wrap">
-            {[["5 dk","günlük minimum"],["7 gün","başlangıç planı"],["3 kitap","sana özel öneri"]].map(([val, lbl]) => (
+            {[["5 dk", "günlük minimum"], ["7 gün", "başlangıç planı"], ["3 kitap", "sana özel öneri"]].map(([val, lbl]) => (
               <div key={lbl}>
                 <p className="font-serif text-2xl font-bold text-navy">{val}</p>
                 <p className="text-xs text-gray-400 mt-0.5">{lbl}</p>
@@ -243,9 +253,9 @@ function Problem() {
 function Solution() {
   const items = [
     { n: "01", title: "Kişisel okur profili testi", desc: "4 kısa soru ile okuma alışkanlıklarını, engellerini ve beklentilerini anlarız." },
-    { n: "02", title: "Sana göre kitap önerisi",    desc: "Ruh haline, müsait zamanına ve okuma seviyene göre seçilmiş 3 kitap." },
-    { n: "03", title: "Günlük mikro hedefler",      desc: "5–30 dakikalık gerçekçi hedeflerle alışkanlık yavaş yavaş otomatikleşir." },
-    { n: "04", title: "Yarıda bırakınca ne olur?",  desc: "Endişelenme. Neden bıraktığını analiz eder, sana daha uygun bir kitap öneririz." },
+    { n: "02", title: "Sana göre kitap önerisi", desc: "Ruh haline, müsait zamanına ve okuma seviyene göre seçilmiş 3 kitap." },
+    { n: "03", title: "Günlük mikro hedefler", desc: "5–30 dakikalık gerçekçi hedeflerle alışkanlık yavaş yavaş otomatikleşir." },
+    { n: "04", title: "Yarıda bırakınca ne olur?", desc: "Endişelenme. Neden bıraktığını analiz eder, sana daha uygun bir kitap öneririz." },
   ];
 
   return (
@@ -280,11 +290,11 @@ function Solution() {
 
 function HowItWorks() {
   const steps = [
-    { n: 1, title: "Kısa testi çöz",              desc: "Zamanın, kitaplardaki engelin ve beklentin hakkında 4 soru. Sadece tıkla, yaz." },
-    { n: 2, title: "Okur profilini öğren",         desc: "Başlayamayan, yarıda bırakan, dikkati dağılan veya derinleşmek isteyen — hangisi sensin?" },
+    { n: 1, title: "Kısa testi çöz", desc: "Zamanın, kitaplardaki engelin ve beklentin hakkında 4 soru. Sadece tıkla, yaz." },
+    { n: 2, title: "Okur profilini öğren", desc: "Başlayamayan, yarıda bırakan, dikkati dağılan veya derinleşmek isteyen — hangisi sensin?" },
     { n: 3, title: "Sana özel 3 kitap önerisi al", desc: "Profiline, zamanına ve istediğin deneyime göre seçilmiş kitaplar." },
     { n: 4, title: "7 günlük mini okuma planına başla", desc: "İlk gün 5 dakika, ikinci gün 7 dakika... Beyin fark etmeden alışkanlığa dönüşür." },
-    { n: 5, title: "İlerlemeni takip et",           desc: "Her gün küçük bir başarı. Haftalık özet. Kitap bitirildiğinde sıradaki hazır." },
+    { n: 5, title: "İlerlemeni takip et", desc: "Her gün küçük bir başarı. Haftalık özet. Kitap bitirildiğinde sıradaki hazır." },
   ];
 
   return (
@@ -317,9 +327,9 @@ function HowItWorks() {
 
 function Profiles() {
   const profiles = [
-    { emoji: "🌱", name: "Başlayamayan Okur",       desc: "Kitap almak istiyor, listeleri var ama bir türlü ilk sayfayı açamıyor.", tag: "Kısa & sürükleyici kitaplar" },
-    { emoji: "🔖", name: "Yarıda Bırakan Okur",     desc: "50–100 sayfa gidiyor, sonra kitap masanın köşesinde aylarca bekliyor.", tag: "Tempo tutarlı kitaplar" },
-    { emoji: "📵", name: "Dikkati Dağılan Okur",    desc: "Okurken telefonu eline alıyor, birkaç paragraftan sonra ne okuduğunu unutuyor.", tag: "Kısa bölümlü kitaplar" },
+    { emoji: "🌱", name: "Başlayamayan Okur", desc: "Kitap almak istiyor, listeleri var ama bir türlü ilk sayfayı açamıyor.", tag: "Kısa & sürükleyici kitaplar" },
+    { emoji: "🔖", name: "Yarıda Bırakan Okur", desc: "50–100 sayfa gidiyor, sonra kitap masanın köşesinde aylarca bekliyor.", tag: "Tempo tutarlı kitaplar" },
+    { emoji: "📵", name: "Dikkati Dağılan Okur", desc: "Okurken telefonu eline alıyor, birkaç paragraftan sonra ne okuduğunu unutuyor.", tag: "Kısa bölümlü kitaplar" },
     { emoji: "🔭", name: "Derinleşmek İsteyen Okur", desc: "Okuyor ama yüzeysel kalıyor. Daha çok, daha anlayarak okumak istiyor.", tag: "Zengin içerikli kitaplar" },
   ];
 
@@ -351,9 +361,9 @@ function Profiles() {
 
 // ── QUIZ COMPONENT ──
 function Quiz() {
-  const [step, setStep]       = useState(0);
+  const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
-  const [done, setDone]       = useState(false);
+  const [done, setDone] = useState(false);
 
   const select = (opt: string) => {
     const next = [...answers];
@@ -384,9 +394,8 @@ function Quiz() {
         {QUESTIONS.map((_, i) => (
           <div
             key={i}
-            className={`flex-1 h-1 rounded-full transition-colors duration-300 ${
-              i < step ? "bg-green-400" : i === step ? "bg-amber-400" : "bg-gray-200"
-            }`}
+            className={`flex-1 h-1 rounded-full transition-colors duration-300 ${i < step ? "bg-green-400" : i === step ? "bg-amber-400" : "bg-gray-200"
+              }`}
           />
         ))}
       </div>
@@ -399,11 +408,10 @@ function Quiz() {
           <button
             key={opt}
             onClick={() => select(opt)}
-            className={`text-left px-4 py-3 rounded-xl border-2 text-sm transition-all ${
-              answers[step] === opt
+            className={`text-left px-4 py-3 rounded-xl border-2 text-sm transition-all ${answers[step] === opt
                 ? "border-amber-400 bg-amber-50 text-amber-700 font-medium"
                 : "border-gray-200 bg-gray-50 text-navy hover:border-amber-300 hover:bg-amber-50"
-            }`}
+              }`}
           >
             {opt}
           </button>
@@ -421,9 +429,8 @@ function Quiz() {
         <button
           onClick={goNext}
           disabled={!answers[step]}
-          className={`bg-navy text-cream rounded-full px-5 py-2 text-sm font-medium transition-all ${
-            answers[step] ? "hover:bg-navy/90 hover:-translate-y-0.5" : "opacity-40 cursor-not-allowed"
-          }`}
+          className={`bg-navy text-cream rounded-full px-5 py-2 text-sm font-medium transition-all ${answers[step] ? "hover:bg-navy/90 hover:-translate-y-0.5" : "opacity-40 cursor-not-allowed"
+            }`}
         >
           {step === QUESTIONS.length - 1 ? "Profilimi göster →" : "İleri →"}
         </button>
@@ -434,15 +441,46 @@ function Quiz() {
 
 function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => void }) {
   const profile = getProfile(answers);
-  const books   = BOOKS_BY_EXP[answers[2]] ?? BOOKS_BY_EXP["Kısa & kolay"];
-  const plan    = PLANS[answers[0]] ?? PLANS["10 dakika"];
-  const today   = new Date();
+  const books = BOOKS_BY_EXP[answers[2]] ?? BOOKS_BY_EXP["Kısa & kolay"];
+  const plan = PLANS[answers[0]] ?? PLANS["10 dakika"];
+  const today = new Date();
+  const [completedToday, setCompletedToday] = useState(false);
+  const [streak, setStreak] = useState(0);
+
+  useEffect(() => {
+    const todayKey = getTodayKey();
+    const savedDate = localStorage.getItem("okuya-last-read-date");
+    const savedStreak = Number(localStorage.getItem("okuya-streak") || "0");
+
+    setCompletedToday(savedDate === todayKey);
+    setStreak(savedStreak);
+  }, []);
+
+  const markTodayAsRead = () => {
+    const todayKey = getTodayKey();
+    const yesterdayKey = getYesterdayKey();
+
+    const savedDate = localStorage.getItem("okuya-last-read-date");
+    const savedStreak = Number(localStorage.getItem("okuya-streak") || "0");
+
+    if (savedDate === todayKey) {
+      return;
+    }
+
+    const nextStreak = savedDate === yesterdayKey ? savedStreak + 1 : 1;
+
+    localStorage.setItem("okuya-last-read-date", todayKey);
+    localStorage.setItem("okuya-streak", String(nextStreak));
+
+    setCompletedToday(true);
+    setStreak(nextStreak);
+  };
 
   const PROFILE_COLORS: Record<string, string> = {
-    "Başlayamayan Okur":       "#2d6a4f",
-    "Yarıda Bırakan Okur":     "#b87d0e",
-    "Dikkati Dağılan Okur":    "#6d4c9e",
-    "Derinleşmek İsteyen Okur":"#1a5276",
+    "Başlayamayan Okur": "#2d6a4f",
+    "Yarıda Bırakan Okur": "#b87d0e",
+    "Dikkati Dağılan Okur": "#6d4c9e",
+    "Derinleşmek İsteyen Okur": "#1a5276",
   };
   const color = PROFILE_COLORS[profile.name] ?? "#1a1f3c";
 
@@ -505,8 +543,41 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
             </div>
           );
         })}
-      </div>
 
+      </div>
+      {/* Reading tracker */}
+      <div className="bg-navy rounded-2xl p-5 mb-5 text-center">
+        <p className="text-white/50 text-xs mb-1">Bugünkü okuma durumu</p>
+
+        {completedToday ? (
+          <>
+            <p className="font-serif text-2xl font-bold text-white mb-2">
+              Harika, bugün hedef tamamlandı ✨
+            </p>
+            <p className="text-white/60 text-sm mb-4">
+              Okuma serin şu anda <span className="text-amber-400 font-semibold">{streak} gün</span>.
+            </p>
+            <div className="inline-flex items-center gap-2 bg-green-400/15 text-green-300 rounded-full px-4 py-2 text-sm font-medium">
+              ✓ Bugün okudum
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="font-serif text-2xl font-bold text-white mb-2">
+              Bugün sadece {plan[0]} yeter.
+            </p>
+            <p className="text-white/60 text-sm mb-4">
+              Hedefini tamamladığında işaretle. Küçük adımlar alışkanlığa dönüşür.
+            </p>
+            <button
+              onClick={markTodayAsRead}
+              className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-6 py-3 text-sm font-medium transition-all hover:-translate-y-0.5"
+            >
+              Bugün okudum
+            </button>
+          </>
+        )}
+      </div>
       <button
         onClick={onReset}
         className="w-full bg-amber-500 hover:bg-amber-600 text-white rounded-xl py-3 font-medium transition-all hover:-translate-y-0.5"
