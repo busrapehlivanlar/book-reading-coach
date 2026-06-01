@@ -650,6 +650,35 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
   const [completedToday, setCompletedToday] = useState(false);
   const [streak, setStreak] = useState(0);
   const [selectedBook, setSelectedBook] = useState<BookEntry | null>(null);
+  const [dailyPageGoal, setDailyPageGoal] = useState(10);
+  const [isTrackingStarted, setIsTrackingStarted] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pagesReadToday, setPagesReadToday] = useState("");
+  const totalPages = selectedBook?.totalPages ?? 0;
+  const remainingPages = Math.max(totalPages - currentPage, 0);
+  const progressPercent = totalPages > 0 ? Math.round((currentPage / totalPages) * 100) : 0;
+  const estimatedDaysLeft = dailyPageGoal > 0 ? Math.ceil(remainingPages / dailyPageGoal) : 0;
+
+  const startTracking = () => {
+    setCurrentPage(0);
+    setPagesReadToday("");
+    setIsTrackingStarted(true);
+  };
+
+  const saveReadingProgress = () => {
+    if (!selectedBook) return;
+
+    const pages = Number(pagesReadToday);
+
+    if (!Number.isFinite(pages) || pages <= 0) {
+      return;
+    }
+
+    const nextPage = Math.min(currentPage + pages, selectedBook.totalPages);
+
+    setCurrentPage(nextPage);
+    setPagesReadToday("");
+  };
 
   useEffect(() => {
     const todayKey = getTodayKey();
@@ -700,7 +729,7 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
       </div>
 
       {/* Today target */}
-  
+
 
       {/* Books */}
       <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-3">
@@ -740,7 +769,12 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
 
             <button
               type="button"
-              onClick={() => setSelectedBook(book)}
+              onClick={() => {
+                setSelectedBook(book);
+                setIsTrackingStarted(false);
+                setCurrentPage(0);
+                setPagesReadToday("");
+              }}
               className="mt-auto bg-navy text-cream rounded-full px-4 py-2 text-xs font-medium hover:bg-navy/90 transition-all"
             >
               Okumaya başla
@@ -749,145 +783,194 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
         ))}
       </div>
       {selectedBook ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-amber-600 mb-2">
-            Seçilen kitap
-          </p>
+        <>
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-amber-600 mb-2">
+              Seçilen kitap
+            </p>
 
-          <div className="flex gap-4 items-center">
-            <div
-              className="w-16 h-24 rounded-xl p-2 flex flex-col justify-between text-white flex-shrink-0"
-              style={{ background: selectedBook.coverColor }}
-            >
-              <span className="text-[8px] uppercase tracking-widest opacity-70">
-                Okuya
-              </span>
-              <span className="font-serif font-bold text-xs leading-tight">
-                {selectedBook.title}
-              </span>
-              <span className="text-[8px] opacity-70">
-                {selectedBook.totalPages} syf
-              </span>
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_260px] gap-6 items-start">
+              <div className="flex gap-4 items-center">
+                <div
+                  className="w-16 h-24 rounded-xl p-2 flex flex-col justify-between text-white flex-shrink-0"
+                  style={{ background: selectedBook.coverColor }}
+                >
+                  <span className="text-[8px] uppercase tracking-widest opacity-70">
+                    Okuya
+                  </span>
+                  <span className="font-serif font-bold text-xs leading-tight">
+                    {selectedBook.title}
+                  </span>
+                  <span className="text-[8px] opacity-70">
+                    {selectedBook.totalPages} syf
+                  </span>
+                </div>
 
-            <div>
-              <h4 className="font-serif font-bold text-navy text-lg">
-                {selectedBook.title}
-              </h4>
-              <p className="text-gray-500 text-xs mb-2">{selectedBook.author}</p>
-              <p className="text-gray-500 text-sm">{selectedBook.reason}</p>
+                <div>
+                  <h4 className="font-serif font-bold text-navy text-lg">
+                    {selectedBook.title}
+                  </h4>
+                  <p className="text-gray-500 text-xs mb-2">
+                    {selectedBook.author}
+                  </p>
+                  <p className="text-gray-500 text-sm">
+                    {selectedBook.reason}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t md:border-t-0 md:border-l border-amber-200 pt-5 md:pt-0 md:pl-5">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-amber-600 mb-3">
+                  Günlük sayfa hedefin
+                </p>
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {[5, 10, 15, 20, 30].map((goal) => (
+                    <button
+                      key={goal}
+                      type="button"
+                      onClick={() => setDailyPageGoal(goal)}
+                      className={`rounded-full px-4 py-2 text-xs font-medium transition-all ${dailyPageGoal === goal
+                          ? "bg-navy text-cream"
+                          : "bg-white text-navy border border-amber-200 hover:border-amber-400"
+                        }`}
+                    >
+                      {goal} sayfa
+                    </button>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-white rounded-xl p-3 text-center border border-amber-100">
+                    <p className="font-serif font-bold text-navy text-lg">
+                      {selectedBook.totalPages}
+                    </p>
+                    <p className="text-gray-400 text-[10px]">toplam sayfa</p>
+                  </div>
+
+                  <div className="bg-white rounded-xl p-3 text-center border border-amber-100">
+                    <p className="font-serif font-bold text-navy text-lg">
+                      {dailyPageGoal}
+                    </p>
+                    <p className="text-gray-400 text-[10px]">günlük hedef</p>
+                  </div>
+
+                  <div className="bg-white rounded-xl p-3 text-center border border-amber-100">
+                    <p className="font-serif font-bold text-navy text-lg">
+                      {Math.ceil(selectedBook.totalPages / dailyPageGoal)}
+                    </p>
+                    <p className="text-gray-400 text-[10px]">tahmini gün</p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={startTracking}
+                  className="mt-4 w-full bg-navy text-cream rounded-xl py-3 text-sm font-medium hover:bg-navy/90 transition-all hover:-translate-y-0.5"
+                >
+                  Okuma takibini başlat
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+
+          {isTrackingStarted && (
+            <div className="bg-navy rounded-2xl p-5 mb-6 text-white">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-white/50 mb-2">
+                Aktif okuma takibi
+              </p>
+
+              <div className="flex items-start justify-between gap-4 mb-5">
+                <div>
+                  <h4 className="font-serif font-bold text-2xl">
+                    {selectedBook.title}
+                  </h4>
+                  <p className="text-white/50 text-sm mt-1">
+                    {selectedBook.author}
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <p className="font-serif font-bold text-2xl text-amber-400">
+                    %{progressPercent}
+                  </p>
+                  <p className="text-white/40 text-xs">tamamlandı</p>
+                </div>
+              </div>
+
+              <div className="bg-white/10 rounded-full h-3 mb-5 overflow-hidden">
+                <div
+                  className="bg-amber-400 h-full rounded-full transition-all"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 mb-5">
+                <div className="bg-white/8 border border-white/10 rounded-xl p-3 text-center">
+                  <p className="font-serif font-bold text-xl">{currentPage}</p>
+                  <p className="text-white/40 text-[10px]">okunan sayfa</p>
+                </div>
+
+                <div className="bg-white/8 border border-white/10 rounded-xl p-3 text-center">
+                  <p className="font-serif font-bold text-xl">{remainingPages}</p>
+                  <p className="text-white/40 text-[10px]">kalan sayfa</p>
+                </div>
+
+                <div className="bg-white/8 border border-white/10 rounded-xl p-3 text-center">
+                  <p className="font-serif font-bold text-xl">{estimatedDaysLeft}</p>
+                  <p className="text-white/40 text-[10px]">tahmini gün</p>
+                </div>
+              </div>
+
+              {progressPercent >= 100 ? (
+                <div className="bg-green-400/15 border border-green-300/20 rounded-xl p-4 text-center">
+                  <p className="font-serif font-bold text-xl text-green-200">
+                    Tebrikler, kitabı bitirdin 🎉
+                  </p>
+                  <p className="text-green-100/70 text-sm mt-1">
+                    Bir sonraki adımda bu kitabı rafına ekleyebileceksin.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-xl p-4 text-navy">
+                  <label className="block text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-2">
+                    Bugün kaç sayfa okudun?
+                  </label>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      value={pagesReadToday}
+                      onChange={(e) => setPagesReadToday(e.target.value)}
+                      placeholder="Örn. 12"
+                      className="flex-1 rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-amber-400"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={saveReadingProgress}
+                      className="bg-amber-500 hover:bg-amber-600 text-white rounded-xl px-4 py-3 text-sm font-medium transition-all"
+                    >
+                      Kaydet
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </>
       ) : (
         <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-6 text-center">
           <p className="font-serif font-bold text-navy text-lg mb-1">
             Okuma planını başlatmak için bir kitap seç.
           </p>
           <p className="text-gray-400 text-sm">
-            Yukarıdaki kitaplardan birini seçtiğinde günlük planın ve okuma takibin hazırlanacak.
+            Yukarıdaki kitaplardan birini seçtiğinde günlük hedefini belirleyip okuma takibine başlayabileceksin.
           </p>
         </div>
       )}
 
-      {selectedBook && (
-        <>
-          {/* 7-day plan */}
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-3">
-            7 günlük başlangıç planı
-          </p>
-
-          <div className="grid grid-cols-7 gap-1 mb-6">
-            {plan.map((d, i) => {
-              const day = DAYS[(today.getDay() + i) % 7];
-              const isFirst = i === 0;
-
-              return (
-                <div
-                  key={i}
-                  className={`rounded-lg p-1.5 text-center ${isFirst ? "bg-amber-400" : "bg-gray-100 border border-gray-200"
-                    }`}
-                >
-                  <p className={`text-[10px] font-bold ${isFirst ? "text-white" : "text-navy"}`}>
-                    {day}
-                  </p>
-                  <p className={`text-[9px] mt-0.5 ${isFirst ? "text-white" : "text-gray-400"}`}>
-                    {d}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Reading tracker */}
-          <div className="bg-navy rounded-2xl p-5 mb-5 text-center">
-            <p className="text-white/50 text-xs mb-1">Bugünkü okuma durumu</p>
-
-            {completedToday ? (
-              <>
-                <p className="font-serif text-2xl font-bold text-white mb-2">
-                  Harika, bugün hedef tamamlandı ✨
-                </p>
-                <p className="text-white/60 text-sm mb-4">
-                  Okuma serin şu anda{" "}
-                  <span className="text-amber-400 font-semibold">{streak} gün</span>.
-                </p>
-                <div className="inline-flex items-center gap-2 bg-green-400/15 text-green-300 rounded-full px-4 py-2 text-sm font-medium">
-                  ✓ Bugün okudum
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="font-serif text-2xl font-bold text-white mb-2">
-                  Bugün sadece {plan[0]} yeter.
-                </p>
-                <p className="text-white/60 text-sm mb-4">
-                  Hedefini tamamladığında işaretle. Küçük adımlar alışkanlığa dönüşür.
-                </p>
-                <button
-                  onClick={markTodayAsRead}
-                  className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-6 py-3 text-sm font-medium transition-all hover:-translate-y-0.5"
-                >
-                  Bugün okudum
-                </button>
-              </>
-            )}
-          </div>
-        </>
-      )}
-      {/* Reading tracker */}
-      <div className="bg-navy rounded-2xl p-5 mb-5 text-center">
-        <p className="text-white/50 text-xs mb-1">Bugünkü okuma durumu</p>
-
-        {completedToday ? (
-          <>
-            <p className="font-serif text-2xl font-bold text-white mb-2">
-              Harika, bugün hedef tamamlandı ✨
-            </p>
-            <p className="text-white/60 text-sm mb-4">
-              Okuma serin şu anda <span className="text-amber-400 font-semibold">{streak} gün</span>.
-            </p>
-            <div className="inline-flex items-center gap-2 bg-green-400/15 text-green-300 rounded-full px-4 py-2 text-sm font-medium">
-              ✓ Bugün okudum
-            </div>
-          </>
-        ) : (
-          <>
-            <p className="font-serif text-2xl font-bold text-white mb-2">
-              Bugün sadece {plan[0]} yeter.
-            </p>
-            <p className="text-white/60 text-sm mb-4">
-              Hedefini tamamladığında işaretle. Küçük adımlar alışkanlığa dönüşür.
-            </p>
-            <button
-              onClick={markTodayAsRead}
-              className="bg-amber-500 hover:bg-amber-600 text-white rounded-full px-6 py-3 text-sm font-medium transition-all hover:-translate-y-0.5"
-            >
-              Bugün okudum
-            </button>
-          </>
-        )}
-      </div>
       <button
         onClick={onReset}
         className="w-full bg-amber-500 hover:bg-amber-600 text-white rounded-xl py-3 font-medium transition-all hover:-translate-y-0.5"
@@ -909,13 +992,16 @@ function QuizSection() {
           <h2 className="font-serif text-3xl lg:text-4xl font-bold text-white tracking-tight mb-2">
             Okur profilini hemen öğren
           </h2>
-          <p className="text-white/50 text-sm">4 soru, 2 dakika. Sana özel bir plan hazır.</p>
+          <p className="text-white/50 text-sm">
+            4 soru, 2 dakika. Sana özel bir plan hazır.
+          </p>
         </div>
         <Quiz />
       </div>
     </section>
   );
 }
+
 
 function Testimonials() {
   const items = [
@@ -1019,3 +1105,4 @@ export default function Page() {
     </>
   );
 }
+
