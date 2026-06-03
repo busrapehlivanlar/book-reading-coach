@@ -654,11 +654,26 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
   const [isTrackingStarted, setIsTrackingStarted] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [pagesReadToday, setPagesReadToday] = useState("");
+  const [bookSearch, setBookSearch] = useState("");
   const totalPages = selectedBook?.totalPages ?? 0;
   const remainingPages = Math.max(totalPages - currentPage, 0);
   const progressPercent = totalPages > 0 ? Math.round((currentPage / totalPages) * 100) : 0;
   const estimatedDaysLeft = dailyPageGoal > 0 ? Math.ceil(remainingPages / dailyPageGoal) : 0;
+  const normalizedSearch = bookSearch.trim().toLowerCase();
 
+  const searchedBooks =
+    normalizedSearch.length > 0
+      ? BOOKS.filter((book) =>
+        `${book.title} ${book.author}`.toLowerCase().includes(normalizedSearch)
+      ).slice(0, 6)
+      : [];
+  const selectBook = (book: BookEntry) => {
+    setSelectedBook(book);
+    setIsTrackingStarted(false);
+    setCurrentPage(0);
+    setPagesReadToday("");
+    setBookSearch("");
+  };
   const startTracking = () => {
     setCurrentPage(0);
     setPagesReadToday("");
@@ -769,18 +784,83 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
 
             <button
               type="button"
-              onClick={() => {
-                setSelectedBook(book);
-                setIsTrackingStarted(false);
-                setCurrentPage(0);
-                setPagesReadToday("");
-              }}
+              onClick={() => selectBook(book)}
               className="mt-auto bg-navy text-cream rounded-full px-4 py-2 text-xs font-medium hover:bg-navy/90 transition-all"
             >
               Okumaya başla
             </button>
           </div>
         ))}
+      </div>
+      <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-6">
+        <div className="flex flex-col gap-2 mb-4">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+            Başka bir kitap mı arıyorsun?
+          </p>
+          <label className="sr-only" htmlFor="book-search">
+            Kitap veya yazar ara
+          </label>
+          <input
+            id="book-search"
+            type="text"
+            value={bookSearch}
+            onChange={(e) => setBookSearch(e.target.value)}
+            placeholder="Kitap veya yazar ara... Örn. Simyacı"
+            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-navy outline-none focus:border-amber-400"
+          />
+        </div>
+
+        {bookSearch.trim().length > 0 ? (
+          searchedBooks.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {searchedBooks.map((book) => (
+                <button
+                  key={book.id}
+                  type="button"
+                  onClick={() => selectBook(book)}
+                  className="text-left bg-white border border-amber-100 rounded-xl p-3 hover:border-amber-400 hover:bg-amber-50 transition-all"
+                >
+                  <div className="flex gap-3 items-center">
+                    <div
+                      className="w-10 h-14 rounded-lg p-1.5 flex flex-col justify-between text-white flex-shrink-0"
+                      style={{ background: book.coverColor }}
+                    >
+                      <span className="text-[6px] uppercase tracking-widest opacity-70">
+                        Okuya
+                      </span>
+                      <span className="font-serif font-bold text-[9px] leading-tight">
+                        {book.title.slice(0, 18)}
+                      </span>
+                      <span className="text-[6px] opacity-70">
+                        {book.totalPages} syf
+                      </span>
+                    </div>
+
+                    <div>
+                      <p className="font-semibold text-navy text-sm">{book.title}</p>
+                      <p className="text-gray-400 text-xs">
+                        {book.author} · {book.totalPages} sayfa
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white border border-dashed border-gray-300 rounded-xl p-4 text-center">
+              <p className="font-medium text-navy text-sm">
+                Bu kitap Okuya kitaplığında bulunamadı.
+              </p>
+              <p className="text-gray-400 text-xs mt-1">
+                Sonraki aşamada daha fazla kitap arama ve manuel ekleme desteği ekleyeceğiz.
+              </p>
+            </div>
+          )
+        ) : (
+          <p className="text-gray-400 text-xs">
+            Önerilenlerde yoksa kitap adını veya yazarını arayabilirsin.
+          </p>
+        )}
       </div>
       {selectedBook ? (
         <>
@@ -831,8 +911,8 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
                       type="button"
                       onClick={() => setDailyPageGoal(goal)}
                       className={`rounded-full px-4 py-2 text-xs font-medium transition-all ${dailyPageGoal === goal
-                          ? "bg-navy text-cream"
-                          : "bg-white text-navy border border-amber-200 hover:border-amber-400"
+                        ? "bg-navy text-cream"
+                        : "bg-white text-navy border border-amber-200 hover:border-amber-400"
                         }`}
                     >
                       {goal} sayfa
