@@ -34,6 +34,14 @@ interface BookEntry {
   coverColor: string;
   showInQuiz?: boolean;
 }
+interface FinishedBook {
+  id: string;
+  title: string;
+  author: string;
+  totalPages: number;
+  coverColor: string;
+  finishedAt: string;
+}
 
 // ── DATA ──
 const QUESTIONS: Question[] = [
@@ -982,11 +990,19 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
     hasValidTotalPages && dailyPageGoal > 0
       ? Math.ceil(remainingPages / dailyPageGoal)
       : 0;
+  const pagesReadNumber = Number(pagesReadToday);
+
+  const isReadingInputValid =
+    pagesReadToday !== "" &&
+    Number.isFinite(pagesReadNumber) &&
+    pagesReadNumber > 0 &&
+    pagesReadNumber <= remainingPages;
+
   const normalizedSearch = bookSearch.trim().toLowerCase();
   const [externalBooks, setExternalBooks] = useState<BookEntry[]>([]);
   const [isSearchingExternal, setIsSearchingExternal] = useState(false);
   const [externalSearchError, setExternalSearchError] = useState("");
-
+  const [finishedBooks, setFinishedBooks] = useState<FinishedBook[]>([]);
   const searchedBooks =
     normalizedSearch.length > 0
       ? BOOKS.filter((book) =>
@@ -1088,6 +1104,13 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
 
     return () => window.clearTimeout(timer);
   }, [bookSearch, searchedBooks.length]);
+  useEffect(() => {
+    const savedBooks = localStorage.getItem("okuya-finished-books");
+
+    if (savedBooks) {
+      setFinishedBooks(JSON.parse(savedBooks));
+    }
+  }, []);
   const selectBook = (book: BookEntry) => {
     setSelectedBook(book);
     setIsTrackingStarted(false);
@@ -1117,6 +1140,54 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
 
     setCurrentPage(nextPage);
     setPagesReadToday("");
+  };
+  const LIBRARY_BOOK_COLORS = [
+    "#ef4444",
+    "#f97316",
+    "#ca8a04",
+    "#16a34a",
+    "#0f766e",
+    "#2563eb",
+    "#4f46e5",
+    "#7e22ce",
+    "#be123c",
+    "#92400e",
+  ];
+  const addBookToLibrary = () => {
+    if (!selectedBook || !hasValidTotalPages) return;
+
+    const finishedBook: FinishedBook = {
+      id: `${selectedBook.id}-${Date.now()}`,
+      title: selectedBook.title,
+      author: selectedBook.author,
+      totalPages: selectedTotalPages,
+      coverColor: LIBRARY_BOOK_COLORS[finishedBooks.length % LIBRARY_BOOK_COLORS.length],
+      finishedAt: new Date().toISOString(),
+    };
+
+    const alreadyExists = finishedBooks.some(
+      (book) => book.title === selectedBook.title && book.author === selectedBook.author
+    );
+
+    if (alreadyExists) {
+      setIsTrackingStarted(false);
+      setSelectedBook(null);
+      setCurrentPage(0);
+      setPagesReadToday("");
+      setManualTotalPages("");
+      return;
+    }
+
+    const nextBooks = [finishedBook, ...finishedBooks];
+
+    setFinishedBooks(nextBooks);
+    localStorage.setItem("okuya-finished-books", JSON.stringify(nextBooks));
+
+    setIsTrackingStarted(false);
+    setSelectedBook(null);
+    setCurrentPage(0);
+    setPagesReadToday("");
+    setManualTotalPages("");
   };
 
   useEffect(() => {
@@ -1518,9 +1589,17 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
                   <p className="font-serif font-bold text-xl text-green-200">
                     Tebrikler, kitabı bitirdin 🎉
                   </p>
-                  <p className="text-green-100/70 text-sm mt-1">
-                    Bir sonraki adımda bu kitabı rafına ekleyebileceksin.
+                  <p className="text-green-100/70 text-sm mt-1 mb-4">
+                    Bu kitabı artık kitaplığına ekleyebilirsin.
                   </p>
+
+                  <button
+                    type="button"
+                    onClick={addBookToLibrary}
+                    className="bg-green-300 text-navy rounded-xl px-5 py-3 text-sm font-semibold hover:bg-green-200 transition-all"
+                  >
+                    Kitaplığıma ekle
+                  </button>
                 </div>
               ) : (
                 <div className="bg-white rounded-xl p-4 text-navy">
@@ -1529,6 +1608,7 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
                   </label>
 
                   <div className="flex gap-2">
+
                     <input
                       type="number"
                       min="1"
@@ -1546,6 +1626,11 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
                       Kaydet
                     </button>
                   </div>
+                  {pagesReadToday !== "" && pagesReadNumber > remainingPages && (
+                    <p className="text-red-500 text-xs mt-3">
+                      Kalan sayfa {remainingPages}. En fazla {remainingPages} sayfa girebilirsin.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -1562,6 +1647,72 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
         </div>
       )}
 
+      {finishedBooks.length > 0 && (
+        <div className="bg-cream border border-amber-100 rounded-2xl p-5 mb-6 overflow-hidden">
+          <div className="flex items-end justify-between gap-4 mb-5">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1">
+                Kitaplığım
+              </p>
+              <h4 className="font-serif font-bold text-navy text-xl">
+                Bitirdiğin kitaplar
+              </h4>
+              <p className="text-gray-400 text-xs mt-1">
+                Okuduğun kitaplar burada rafına dizilir.
+              </p>
+            </div>
+
+            <div className="bg-white border border-amber-100 rounded-full px-3 py-1 text-xs text-gray-500">
+              {finishedBooks.length} kitap
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="flex items-end gap-2 overflow-x-auto pb-5 pt-2">
+              {finishedBooks.map((book, index) => (
+                <div
+                  key={book.id}
+                  className="group relative flex-shrink-0"
+                  title={`${book.title} - ${book.author}`}
+                >
+                  <div
+                    className="w-16 rounded-t-md rounded-b-sm shadow-sm border border-black/10 flex flex-col justify-between p-2 text-white transition-all group-hover:-translate-y-1"
+                    style={{
+                      background: book.coverColor,
+                      height: `${92 + (index % 3) * 12}px`,
+                    }}
+                  >
+                    <span className="text-[7px] uppercase tracking-widest opacity-70">
+                      Okuya
+                    </span>
+
+                    <span className="font-serif font-bold text-[10px] leading-tight break-words">
+                      {book.title.length > 28
+                        ? `${book.title.slice(0, 28)}...`
+                        : book.title}
+                    </span>
+
+                    <span className="text-[7px] opacity-70">
+                      bitti
+                    </span>
+                  </div>
+
+                  <div className="absolute left-1/2 top-full z-20 mt-2 hidden w-48 -translate-x-1/2 rounded-xl bg-navy p-3 text-left text-white shadow-xl group-hover:block">
+                    <p className="font-semibold text-sm">{book.title}</p>
+                    <p className="text-white/60 text-xs mt-1">{book.author}</p>
+                    <p className="text-green-300 text-xs mt-2">
+                      {book.totalPages} sayfa tamamlandı
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="h-3 rounded-full bg-amber-800/30 shadow-inner" />
+            <div className="h-2 mx-6 rounded-b-xl bg-amber-900/20" />
+          </div>
+        </div>
+      )}
       <button
         onClick={onReset}
         className="w-full bg-amber-500 hover:bg-amber-600 text-white rounded-xl py-3 font-medium transition-all hover:-translate-y-0.5"
