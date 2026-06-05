@@ -25,7 +25,7 @@ interface BookEntry {
   id: string;
   title: string;
   author: string;
-  totalPages: number;
+  totalPages?: number;
   reason: string;
   length: "short" | "medium" | "long";
   pace: "fast" | "balanced" | "slow";
@@ -136,7 +136,7 @@ const BOOKS: BookEntry[] = [
     id: "simyaci",
     title: "Simyacı",
     author: "Paulo Coelho",
-    totalPages: 192,
+    //totalPages: 192,
     reason: "Akıcı dili ve motive edici hikâyesiyle yeni okurlar için düşük bariyerlidir.",
     length: "short",
     pace: "balanced",
@@ -965,11 +965,27 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
   const [currentPage, setCurrentPage] = useState(0);
   const [pagesReadToday, setPagesReadToday] = useState("");
   const [bookSearch, setBookSearch] = useState("");
-  const totalPages = selectedBook?.totalPages ?? 0;
-  const remainingPages = Math.max(totalPages - currentPage, 0);
-  const progressPercent = totalPages > 0 ? Math.round((currentPage / totalPages) * 100) : 0;
-  const estimatedDaysLeft = dailyPageGoal > 0 ? Math.ceil(remainingPages / dailyPageGoal) : 0;
+  const [manualTotalPages, setManualTotalPages] = useState("");
+
+  const selectedTotalPages =
+    selectedBook?.totalPages ?? (Number(manualTotalPages) || 0);
+
+  const hasValidTotalPages = selectedTotalPages > 0;
+
+  const remainingPages = Math.max(selectedTotalPages - currentPage, 0);
+
+  const progressPercent = hasValidTotalPages
+    ? Math.round((currentPage / selectedTotalPages) * 100)
+    : 0;
+
+  const estimatedDaysLeft =
+    hasValidTotalPages && dailyPageGoal > 0
+      ? Math.ceil(remainingPages / dailyPageGoal)
+      : 0;
   const normalizedSearch = bookSearch.trim().toLowerCase();
+  const [externalBooks, setExternalBooks] = useState<BookEntry[]>([]);
+  const [isSearchingExternal, setIsSearchingExternal] = useState(false);
+  const [externalSearchError, setExternalSearchError] = useState("");
 
   const searchedBooks =
     normalizedSearch.length > 0
@@ -977,14 +993,112 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
         `${book.title} ${book.author}`.toLowerCase().includes(normalizedSearch)
       ).slice(0, 6)
       : [];
+  const getExternalBookLength = (pageCount?: number): BookEntry["length"] => {
+    if (!pageCount) return "medium";
+    if (pageCount <= 180) return "short";
+    if (pageCount <= 350) return "medium";
+    return "long";
+  };
+
+  const searchExternalBooks = async (queryText: string) => {
+    const query = queryText.trim();
+
+    if (query.length < 3) {
+      setExternalBooks([]);
+      return;
+    }
+
+    setIsSearchingExternal(true);
+    setExternalSearchError("");
+    setExternalBooks([]);
+
+    try {
+      const response = await fetch(
+        `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=8`
+      );
+
+      if (!response.ok) {
+        throw new Error("Kitap araması başarısız oldu.");
+      }
+
+      const data = await response.json();
+
+      const mappedBooks: BookEntry[] = (data.docs ?? [])
+        .map((item: any) => {
+          const title = item.title;
+          const author = Array.isArray(item.author_name)
+            ? item.author_name.slice(0, 2).join(", ")
+            : "Bilinmeyen yazar";
+
+          if (!title) return null;
+
+          const pageCount =
+            typeof item.number_of_pages_median === "number" &&
+              item.number_of_pages_median > 0
+              ? item.number_of_pages_median
+              : undefined;
+
+          return {
+            id: `openlibrary-${item.key}`,
+            title,
+            author,
+            totalPages: pageCount,
+            reason: pageCount
+              ? "Open Library üzerinden bulundu. Sayfa sayısı otomatik alındı."
+              : "Open Library üzerinden bulundu. Sayfa sayısı bulunamadı; takibe başlamadan önce ekleyebilirsin.",
+            length: getExternalBookLength(pageCount),
+            pace: "balanced",
+            difficulty: "easy",
+            moods: ["Kısa & kolay"],
+            coverColor: "#334155",
+            showInQuiz: false,
+          };
+        })
+        .filter(Boolean) as BookEntry[];
+
+      setExternalBooks(mappedBooks);
+
+      if (mappedBooks.length === 0) {
+        setExternalSearchError("Bu aramada uygun kitap sonucu bulunamadı.");
+      }
+    } catch {
+      setExternalSearchError("Kitap araması sırasında bir sorun oluştu. Lütfen tekrar dene.");
+    } finally {
+      setIsSearchingExternal(false);
+    }
+  };
+  useEffect(() => {
+    const query = bookSearch.trim();
+
+    setExternalSearchError("");
+
+    if (query.length < 3) {
+      setExternalBooks([]);
+      return;
+    }
+
+    if (searchedBooks.length > 0) {
+      setExternalBooks([]);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      searchExternalBooks(query);
+    }, 600);
+
+    return () => window.clearTimeout(timer);
+  }, [bookSearch, searchedBooks.length]);
   const selectBook = (book: BookEntry) => {
     setSelectedBook(book);
     setIsTrackingStarted(false);
     setCurrentPage(0);
     setPagesReadToday("");
     setBookSearch("");
+    setManualTotalPages("");
   };
   const startTracking = () => {
+    if (!hasValidTotalPages) return;
+
     setCurrentPage(0);
     setPagesReadToday("");
     setIsTrackingStarted(true);
@@ -999,7 +1113,7 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
       return;
     }
 
-    const nextPage = Math.min(currentPage + pages, selectedBook.totalPages);
+    const nextPage = Math.min(currentPage + pages, selectedTotalPages);
 
     setCurrentPage(nextPage);
     setPagesReadToday("");
@@ -1121,51 +1235,114 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
         </div>
 
         {bookSearch.trim().length > 0 ? (
-          searchedBooks.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {searchedBooks.map((book) => (
-                <button
-                  key={book.id}
-                  type="button"
-                  onClick={() => selectBook(book)}
-                  className="text-left bg-white border border-amber-100 rounded-xl p-3 hover:border-amber-400 hover:bg-amber-50 transition-all"
-                >
-                  <div className="flex gap-3 items-center">
-                    <div
-                      className="w-10 h-14 rounded-lg p-1.5 flex flex-col justify-between text-white flex-shrink-0"
-                      style={{ background: book.coverColor }}
-                    >
-                      <span className="text-[6px] uppercase tracking-widest opacity-70">
-                        Okuya
-                      </span>
-                      <span className="font-serif font-bold text-[9px] leading-tight">
-                        {book.title.slice(0, 18)}
-                      </span>
-                      <span className="text-[6px] opacity-70">
-                        {book.totalPages} syf
-                      </span>
-                    </div>
+          <>
+            {searchedBooks.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {searchedBooks.map((book) => (
+                  <button
+                    key={book.id}
+                    type="button"
+                    onClick={() => selectBook(book)}
+                    className="text-left bg-white border border-amber-100 rounded-xl p-3 hover:border-amber-400 hover:bg-amber-50 transition-all"
+                  >
+                    <div className="flex gap-3 items-center">
+                      <div
+                        className="w-10 h-14 rounded-lg p-1.5 flex flex-col justify-between text-white flex-shrink-0"
+                        style={{ background: book.coverColor }}
+                      >
+                        <span className="text-[6px] uppercase tracking-widest opacity-70">
+                          Okuya
+                        </span>
+                        <span className="font-serif font-bold text-[9px] leading-tight">
+                          {book.title.slice(0, 18)}
+                        </span>
+                        <span className="text-[6px] opacity-70">
+                          {book.totalPages ? `${book.totalPages} syf` : "sayfa ?"}
+                        </span>
+                      </div>
 
-                    <div>
-                      <p className="font-semibold text-navy text-sm">{book.title}</p>
-                      <p className="text-gray-400 text-xs">
-                        {book.author} · {book.totalPages} sayfa
-                      </p>
+                      <div>
+                        <p className="font-semibold text-navy text-sm">
+                          {book.title}
+                        </p>
+                        <p className="text-gray-400 text-xs">
+                          {book.author} ·{" "}
+                          {book.totalPages
+                            ? `${book.totalPages} sayfa`
+                            : "sayfa sayısı bilinmiyor"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white border border-dashed border-gray-300 rounded-xl p-4 text-center">
-              <p className="font-medium text-navy text-sm">
-                Bu kitap Okuya kitaplığında bulunamadı.
-              </p>
-              <p className="text-gray-400 text-xs mt-1">
-                Sonraki aşamada daha fazla kitap arama ve manuel ekleme desteği ekleyeceğiz.
-              </p>
-            </div>
-          )
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white border border-dashed border-gray-300 rounded-xl p-4 text-center">
+                <p className="font-medium text-navy text-sm">
+                  Bu kitap Okuya kitaplığında bulunamadı.
+                </p>
+                <p className="text-gray-400 text-xs mt-1 mb-4">
+                  İstersen Google Books üzerinden daha geniş bir arama yapabilirsin.
+                </p>
+
+
+
+                {externalSearchError && (
+                  <p className="text-red-500 text-xs mt-3">
+                    {externalSearchError}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {externalBooks.length > 0 && (
+              <div className="mt-4">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-3">
+                  Open Library sonuçları
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {externalBooks.map((book) => (
+                    <button
+                      key={book.id}
+                      type="button"
+                      onClick={() => selectBook(book)}
+                      className="text-left bg-white border border-amber-100 rounded-xl p-3 hover:border-amber-400 hover:bg-amber-50 transition-all"
+                    >
+                      <div className="flex gap-3 items-center">
+                        <div
+                          className="w-10 h-14 rounded-lg p-1.5 flex flex-col justify-between text-white flex-shrink-0"
+                          style={{ background: book.coverColor }}
+                        >
+                          <span className="text-[6px] uppercase tracking-widest opacity-70">
+                            Library
+                          </span>
+                          <span className="font-serif font-bold text-[9px] leading-tight">
+                            {book.title.slice(0, 18)}
+                          </span>
+                          <span className="text-[6px] opacity-70">
+                            {book.totalPages ? `${book.totalPages} syf` : "sayfa ?"}
+                          </span>
+                        </div>
+
+                        <div>
+                          <p className="font-semibold text-navy text-sm">
+                            {book.title}
+                          </p>
+                          <p className="text-gray-400 text-xs">
+                            {book.author} ·{" "}
+                            {book.totalPages
+                              ? `${book.totalPages} sayfa`
+                              : "sayfa sayısı bilinmiyor"}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <p className="text-gray-400 text-xs">
             Önerilenlerde yoksa kitap adını veya yazarını arayabilirsin.
@@ -1192,7 +1369,7 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
                     {selectedBook.title}
                   </span>
                   <span className="text-[8px] opacity-70">
-                    {selectedBook.totalPages} syf
+                    {selectedBook.totalPages ? `${selectedBook.totalPages} syf` : "sayfa ?"}
                   </span>
                 </div>
 
@@ -1210,6 +1387,26 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
               </div>
 
               <div className="border-t md:border-t-0 md:border-l border-amber-200 pt-5 md:pt-0 md:pl-5">
+                {!selectedBook.totalPages && (
+                  <div className="mb-4">
+                    <label className="block text-[10px] font-semibold uppercase tracking-widest text-amber-600 mb-2">
+                      Toplam sayfa sayısı
+                    </label>
+
+                    <input
+                      type="number"
+                      min="1"
+                      value={manualTotalPages}
+                      onChange={(e) => setManualTotalPages(e.target.value)}
+                      placeholder="Örn. 240"
+                      className="w-full rounded-xl border border-amber-200 bg-white px-4 py-3 text-sm text-navy outline-none focus:border-amber-400"
+                    />
+
+                    <p className="text-gray-400 text-xs mt-2">
+                      Bu kitabın sayfa sayısı bulunamadı. Takibe başlamak için toplam sayfa sayısını gir.
+                    </p>
+                  </div>
+                )}
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-amber-600 mb-3">
                   Günlük sayfa hedefin
                 </p>
@@ -1233,7 +1430,7 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
                 <div className="grid grid-cols-3 gap-2">
                   <div className="bg-white rounded-xl p-3 text-center border border-amber-100">
                     <p className="font-serif font-bold text-navy text-lg">
-                      {selectedBook.totalPages}
+                      {hasValidTotalPages ? selectedTotalPages : "?"}
                     </p>
                     <p className="text-gray-400 text-[10px]">toplam sayfa</p>
                   </div>
@@ -1247,7 +1444,7 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
 
                   <div className="bg-white rounded-xl p-3 text-center border border-amber-100">
                     <p className="font-serif font-bold text-navy text-lg">
-                      {Math.ceil(selectedBook.totalPages / dailyPageGoal)}
+                      {hasValidTotalPages ? Math.ceil(selectedTotalPages / dailyPageGoal) : "?"}
                     </p>
                     <p className="text-gray-400 text-[10px]">tahmini gün</p>
                   </div>
@@ -1256,7 +1453,11 @@ function QuizResult({ answers, onReset }: { answers: string[]; onReset: () => vo
                 <button
                   type="button"
                   onClick={startTracking}
-                  className="mt-4 w-full bg-navy text-cream rounded-xl py-3 text-sm font-medium hover:bg-navy/90 transition-all hover:-translate-y-0.5"
+                  disabled={!hasValidTotalPages}
+                  className={`mt-4 w-full rounded-xl py-3 text-sm font-medium transition-all ${hasValidTotalPages
+                    ? "bg-navy text-cream hover:bg-navy/90 hover:-translate-y-0.5"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    }`}
                 >
                   Okuma takibini başlat
                 </button>
